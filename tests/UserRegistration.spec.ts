@@ -3,7 +3,7 @@ import { HomePage } from '../pages/HomePage';
 import { SignUpPage } from '../pages/SignUpPage';
 import { faker } from '@faker-js/faker';
 
-test.describe('User Registration', () => {
+test.describe('Happy User Registration', () => {
     let homePage: HomePage;
     let signUpPage: SignUpPage;
     const randomName = faker.person.firstName();
@@ -32,5 +32,4 @@ test.describe('User Registration', () => {
         await signUpPage.clickCreateAccountButton();
         await expect(page.getByText('ACCOUNT CREATED!')).toBeVisible();
      });
-
-   });
+});
