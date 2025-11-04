@@ -1,0 +1,77 @@
+name: Production Environment Tests
+
+on:
+  # Run on schedule (daily at 1 AM Central Time / 7 AM UTC)
+  schedule:
+    - cron: '0 7 * * *'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to test'
+        required: true
+        default: 'prod'
+        type: choice
+        options:
+          - prod
+
+jobs:
+  test:
+    name: Run Playwright Tests - Production
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Create .env file
+        run: |
+          echo "BASE_URL=${{ secrets.PROD_BASE_URL }}" >> .env
+          echo "TEST_USER_EMAIL=${{ secrets.PROD_TEST_USER_EMAIL }}" >> .env
+          echo "TEST_USER_PASSWORD=${{ secrets.PROD_TEST_USER_PASSWORD }}" >> .env
+          echo "API_URL=${{ secrets.PROD_API_URL }}" >> .env
+          echo "API_KEY=${{ secrets.PROD_API_KEY }}" >> .env
+          echo "HEADLESS=true" >> .env
+          echo "DEFAULT_TIMEOUT=30000" >> .env
+
+      - name: Run Playwright tests
+        run: npx playwright test
+        continue-on-error: true
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-prod
+          path: test-results/
+          retention-days: 30
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-prod
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload blob report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: blob-report-prod
+          path: blob-report/
+          retention-days: 30

@@ -1,0 +1,77 @@
+name: QA Environment Tests
+
+on:
+  # Run on schedule (daily at 1 AM Central Time / 7 AM UTC)
+  schedule:
+    - cron: '0 7 * * *'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to test'
+        required: true
+        default: 'qa'
+        type: choice
+        options:
+          - qa
+
+jobs:
+  test:
+    name: Run Playwright Tests - QA
+    runs-on: ubuntu-latest
+    environment: qa
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Create .env file
+        run: |
+          echo "BASE_URL=${{ secrets.QA_BASE_URL }}" >> .env
+          echo "TEST_USER_EMAIL=${{ secrets.QA_TEST_USER_EMAIL }}" >> .env
+          echo "TEST_USER_PASSWORD=${{ secrets.QA_TEST_USER_PASSWORD }}" >> .env
+          echo "API_URL=${{ secrets.QA_API_URL }}" >> .env
+          echo "API_KEY=${{ secrets.QA_API_KEY }}" >> .env
+          echo "HEADLESS=true" >> .env
+          echo "DEFAULT_TIMEOUT=30000" >> .env
+
+      - name: Run Playwright tests
+        run: npx playwright test
+        continue-on-error: true
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-qa
+          path: test-results/
+          retention-days: 30
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-qa
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload blob report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: blob-report-qa
+          path: blob-report/
+          retention-days: 30
