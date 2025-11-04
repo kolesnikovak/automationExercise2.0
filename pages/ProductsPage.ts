@@ -7,6 +7,7 @@ export class ProductsPage {
     private firstViewProduct: Locator;
     private addToCartButtonOnViewProductPage: Locator;
     private viewCartButton: Locator;
+    private quantityField: Locator;
 
     constructor(page: Page) {
         this.searchField = page.getByRole('textbox', { name: 'Search Product' })
@@ -14,6 +15,7 @@ export class ProductsPage {
         this.firstViewProduct = page.getByRole('link', { name: ' View Product' }).first();
         this.addToCartButtonOnViewProductPage = page.locator('button[class="btn btn-default cart"]');
         this.viewCartButton = page.getByRole('link', { name: 'View Cart' });
+        this.quantityField = page.locator('input[id="quantity"]');
     }
 
     async searchForProduct(productName: string) {
@@ -31,5 +33,9 @@ export class ProductsPage {
     
     async clickOnViewCartButton(){
         await this.viewCartButton.click();
+    }
+
+    async addProductQuantityToCart(quantity: number): Promise<void> {
+        await this.quantityField.fill(quantity.toString());
     }
 }
